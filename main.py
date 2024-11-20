@@ -22,7 +22,7 @@ img_ori = cv2.imread('car3.png')
 
 #이미지 크기 확인
 height, width, channel = img_ori.shape
-print(height, width, channel)
+# print(height, width, channel)
 
 #이미지 RGB를 Gray로 변환 -> 흑백 사진으로 변환
 gray = cv2.cvtColor(img_ori, cv2.COLOR_BGR2GRAY)
@@ -287,15 +287,17 @@ for i, matched_chars in enumerate(matched_result):
     info = plate_infos[longest_idx]
     chars = plate_chars[longest_idx]
 
-    print(chars)
 
-    img_out = img_ori.copy()
+    if __name__ == '__main__': # 테스트용(사진 및 크기, 번호판 출력) -> 해당 파일을 실행해야 정보가 출력됨
+        print(chars)
 
-    cv2.rectangle(img_out, pt1=(info['x'], info['y']), pt2=(info['x'] + info['w'], info['y'] + info['h']),
-                  color=(255, 0, 0), thickness=2)
+        img_out = img_ori.copy()
 
-    cv2.imwrite(chars + '.jpg', img_out)
+        cv2.rectangle(img_out, pt1=(info['x'], info['y']), pt2=(info['x'] + info['w'], info['y'] + info['h']),
+                      color=(255, 0, 0), thickness=2)
 
-    plt.figure(figsize=(12, 10))
-    plt.imshow(img_out)
-    plt.show()
+        cv2.imwrite(chars + '.jpg', img_out)
+
+        plt.figure(figsize=(12, 10))
+        plt.imshow(img_out)
+        plt.show()
