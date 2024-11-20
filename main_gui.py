@@ -16,27 +16,33 @@ class MyApp(QWidget):
       # 확인 버튼
       # self.dialog = QDialog()
       btn = QPushButton('확인', self)
-      btn.move(695, 550)
+      btn.move(670, 530)
       btn.setFixedSize(120, 40)
       btn.clicked.connect(self.open_database_gui)
 
-      # btn.clicked.connect(QCoreApplication.instance().quit)
+      # 레이아웃을 특정 영역에만 적용 -> 이유 : btn버튼을 widget에 넣으면 위치 조정 불가능,
+      # btn 버튼을 위젯에 넣어야만 클릭이 되는 오류 발생 / 이유 : self.setLayer때문
+      # 해결 : container(영역)을 지정하여 영역 안에 특정 위젯만 넣음 (달력, 레이블)
+      container = QWidget(self)  # 컨테이너 위젯 생성
+      container.setGeometry(0, 0, 800, 500)  # 컨테이너의 위치와 크기 설정
+
 
       # 달력 생성
-      cal = QCalendarWidget(self)
+      cal = QCalendarWidget(container)
       cal.setGridVisible(False)
-      cal.setFixedSize(QSize(800, 500))
+      cal.setFixedSize(QSize(780, 500))
       cal.clicked[QDate].connect(self.showDate)
-      self.lbl = QLabel(self)
+
+      # 레이블 필요없는데 일단 확인용 -> 나중에 삭제
+      self.lbl = QLabel(container)
       date = cal.selectedDate()     # 클릭한 날짜가 저장된 변수 -> 가공해서 DB와 연결
       self.lbl.setText(date.toString())
 
       layout = QVBoxLayout()
       layout.addWidget(cal)
-      layout.addWidget(btn)
       layout.addWidget(self.lbl)
 
-      self.setLayout(layout)
+      container.setLayout(layout)
 
 
       # 창 꾸미기
