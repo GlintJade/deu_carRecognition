@@ -30,6 +30,7 @@ gray = cv2.cvtColor(img_ori, cv2.COLOR_BGR2GRAY)
 # 가우시안 블러 - 노이즈 제거 작업
 img_blurred = cv2.GaussianBlur(gray, ksize=(5, 5), sigmaX=0)
 
+
 # Thresholding - 흑과 백으로만 사진을 구성 0(검은색 픽셀), 255(흰색 픽셀)로 구성
 img_thresh = cv2.adaptiveThreshold( # 가우시안 블러 적용 X
     gray,
@@ -40,6 +41,7 @@ img_thresh = cv2.adaptiveThreshold( # 가우시안 블러 적용 X
     C=9
 )
 
+
 img_blur_thresh = cv2.adaptiveThreshold( # 가우시안 블러 적용 O
     img_blurred,
     maxValue=255.0,
@@ -49,6 +51,7 @@ img_blur_thresh = cv2.adaptiveThreshold( # 가우시안 블러 적용 O
     C=9
 )
 
+
 # 경계선 찾기, 검은색 바탕에서 흰색 대상 찾음
 contours, _ = cv2.findContours(
     img_blur_thresh,
@@ -56,10 +59,12 @@ contours, _ = cv2.findContours(
     method=cv2.CHAIN_APPROX_SIMPLE
 )
 
+
 # 0으로 채워진 배열 생성 -> temp_result는 검은색으로 채워진 이미지
 temp_result = np.zeros((height, width, channel), dtype=np.uint8)
 
 contours_dict = []
+
 
 # 윤곽선 정보가 담긴 contours에서 x, y, width, height를 통해 흰색 직사각형을 그리는 작업
 for contour in contours:
@@ -75,7 +80,7 @@ for contour in contours:
         'cx': x + (w / 2), #중심점
         'cy': y + (h / 2)
     })
-
+    
 # 윤곽선 데이터를 필터링하는 작업 -> 조건에 부합하는 윤곽선만 possible_contours에 저장
 ### 최소 크기를 지정하는 부분이라 너무 작은 번호판을 인식하지 못하는 경우가 발생할 수 있음
 MIN_AREA = 80
@@ -92,6 +97,7 @@ for d in contours_dict:
     if area > MIN_AREA \
             and d['w'] > MIN_WIDTH and d['h'] > MIN_HEIGHT \
             and MIN_RATIO < ratio < MAX_RATIO:
+
         d['idx'] = cnt  # 윤곽선에 인덱스를 부여 -> 추후 작업에 참조
         cnt += 1
         possible_contours.append(d)
@@ -106,6 +112,7 @@ MIN_N_MATCHED = 3           # 유효한 그룹으로 판단이 되는 최소 윤
 
 # 번호판 contours의 width와 height의 비율, 사이의 간격, 3개 이상 인접한지 ...
 # 조건을 충족하는 contours만 추출
+
 def find_chars(contour_list):
     matched_result_idx = []
 
@@ -129,7 +136,9 @@ def find_chars(contour_list):
             width_diff = abs(d1['w'] - d2['w']) / d1['w']
             height_diff = abs(d1['h'] - d2['h']) / d1['h']
 
+            
             # 대각선 길이, 각도, 면적, 너비, 높이 조건을 만족하는 윤곽선을 matched_contours_idx에 1차적으로 넣음
+
             if distance < diagonal_length1 * MAX_DIAG_MULTIPLYER \
                     and angle_diff < MAX_ANGLE_DIFF and area_diff < MAX_AREA_DIFF \
                     and width_diff < MAX_WIDTH_DIFF and height_diff < MAX_HEIGHT_DIFF:
@@ -146,6 +155,7 @@ def find_chars(contour_list):
 
         # 조건을 만족하지 않은 윤곽선 -> find_chars 재귀호출을 통해 조건에 맞는 그룹을 추가 탐색
         # 왜 필요 ? 현재 : 특정 윤곽선(d1)기준 / 다른 윤곽선을 기준으로 하면 다른 유효한 그룹 생길 수 있음 -> 놓친 그룹 찾음
+
         unmatched_contour_idx = []
         for d4 in contour_list:
             if d4['idx'] not in matched_contours_idx:
@@ -158,11 +168,13 @@ def find_chars(contour_list):
         for idx in recursive_contour_list:
             matched_result_idx.append(idx)
 
+
         break # 한 번의 루프에서 하나의 그룹만 처리하기
 
     return matched_result_idx
 
 # 크기와 비율 조건을 만족했던 possible_contours를 find_chars에 해당하는 조건을 만족하는 contours 추리기
+
 result_idx = find_chars(possible_contours)
 
 matched_result = []
@@ -171,7 +183,9 @@ for idx_list in result_idx:
 
 temp_result = np.zeros((height, width, channel), dtype=np.uint8)
 
+
 # 조건을 만족하는 그룹별 윤곽선이 흰색 직사각형으로
+
 for r in matched_result:
     for d in r:
         cv2.rectangle(temp_result, pt1=(d['x'], d['y']), pt2=(d['x'] + d['w'], d['y'] + d['h']), color=(255, 255, 255),
@@ -298,4 +312,6 @@ for i, matched_chars in enumerate(matched_result):
 
     plt.figure(figsize=(12, 10))
     plt.imshow(img_out)
+
     plt.show()
+
