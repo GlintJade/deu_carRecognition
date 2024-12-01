@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import QDate, QSize
 from datetime import datetime
 import main as m
@@ -42,9 +42,12 @@ class MyApp(QWidget):
         layout.addWidget(self.lbl)
         container.setLayout(layout)
 
+
+
+
         # 창 꾸미기
         self.setWindowTitle('불법주정차 리스트')
-        self.setWindowIcon(QIcon('warning.png'))
+        self.setWindowIcon(QIcon('warning.jpg'))
         self.center()
         self.resize(800, 600)
         self.show()
@@ -74,9 +77,12 @@ class MyApp(QWidget):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-
-if __name__ == '__main__':
+def on_main_completed():
+    # GUI 실행
     app = QApplication(sys.argv)
     ex = MyApp()
-    m.main()
     sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    m.main()
+    on_main_completed()

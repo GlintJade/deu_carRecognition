@@ -17,32 +17,49 @@ class DatabaseGUI(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('조회결과')
+        click_year, click_month, click_day = map(int, self.click_date)
+
+        self.setWindowTitle(f'{click_year}년 {click_month}월 {click_day}일 조회결과')
         self.resize(400, 300)
 
-        print(f"Click Date: {self.click_date}")
-        click_year, click_month, click_day = map(int, self.click_date)
+        self.tableWidget = QTableWidget()
+        self.tableWidget.setRowCount(10)
+        self.tableWidget.setColumnCount(2)
+
+        self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+        self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+
         layout = QVBoxLayout()
-        # label = QLabel(f'This is the Database GUI.{click_year},{click_month},{click_day}', self)
-        # layout.addWidget(label)
-        label = QLabel(f"{click_year}년도 {click_month}년 {click_day}일")
-        layout.addWidget(label)
+        layout.addWidget(self.tableWidget)
+        self.setLayout(layout)
+
+        self.setGeometry(300, 100, 600, 400)
+        self.show()
+
+        # print(f"Click Date: {self.click_date}")
 
         con = oracledb.connect(user="digital", password="1234", dsn="localhost:1521/XE")
         cursor = con.cursor()
 
         cursor.execute("select * from LICENSE_TABLE")  # 데이터베이스 명령 실행( cursor가 임시로 보관)
         out_data = cursor.fetchall()  # 커서의 내용을 out_data에 저장
+        i = 0
         for row in out_data:
             license_plate, capture_date = row
             date_obj = datetime.strptime(capture_date, "%Y-%m-%d %H:%M:%S.%f")
             year = int(date_obj.year)
             month = int(date_obj.month)
             day = int(date_obj.day)
+            time_part = capture_date.split(" ")[1]
             if click_year == year and click_month==month and click_day == day:
-                label = QLabel(f"license : {license_plate}", self)  # QLabel 생성
-                layout.addWidget(label)  # 레이아웃에 추가
+                self.tableWidget.setItem(i, 0, QTableWidgetItem(license_plate))
+                self.tableWidget.setItem(i, 1, QTableWidgetItem(time_part))
+                i += 1
 
+
+        con.close()
 
         self.setLayout(layout)
 

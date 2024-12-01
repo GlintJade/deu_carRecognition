@@ -18,7 +18,7 @@ sys.path.insert(0, './model')
 model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
 
 # 동영상 파일 경로
-video_path = 'video/car.mp4'
+video_path = 'video/car_1.mp4'
 
 # 결과 저장 디렉토리
 output_dir = "./captures"
@@ -32,6 +32,9 @@ frame_count = 0
 capture_count = 0
 CONFIDENCE_THRESHOLD = 0.6  # 신뢰도 기준 설정
 FRAME_INTERVAL = 10  # 프레임 간격 설정 (10 프레임마다 처리)
+
+# 번호판 탐지 결과 저장 리스트
+detections_list = []
 
 # 동영상 프레임 처리
 while cap.isOpened():
@@ -55,10 +58,12 @@ while cap.isOpened():
     # 번호판("licence")와 Confidence 기준 필터링
     licence_detections = detections[(detections['name'] == 'licence') & (detections['confidence'] >= CONFIDENCE_THRESHOLD)]
 
-    # 디버깅: 탐지된 번호판 정보 출력
-    print(f"[Frame {frame_count}] 탐지된 번호판 수: {len(licence_detections)}")
-    for index, licence in licence_detections.iterrows():
-        print(f" - 번호판 신뢰도: {licence['confidence']:.2f}")
+    for _, licence in licence_detections.iterrows():
+        x1, y1, x2, y2 = int(licence['xmin']), int(licence['ymin']), int(licence['xmax']), int(licence['ymax'])
+        confidence = licence['confidence']
+        cropped_image = frame[y1:y2, x1:x2]
+        detections_list.append({'confidence': confidence, 'cropped_image': cropped_image})
+
 
         # 번호판 영역에 사각형 그리기
         x1, y1, x2, y2 = int(licence['xmin']), int(licence['ymin']), int(licence['xmax']), int(licence['ymax'])
@@ -71,20 +76,21 @@ while cap.isOpened():
         label = f"{confidence:.2f}"
         cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-    # 번호판이 탐지된 경우 저장
-    if not licence_detections.empty:
-        capture_path = os.path.join(output_dir, f"capture_{capture_count}.jpg")     # 원본 저장
-        cropped_image = frame[y1:y2, x1:x2]
-        cropped_path = os.path.join(cropoutput_dir, f"cropped_{capture_count}.jpg")     # 자동차 번호판 크기만큼 잘라서 저장
-        cv2.imwrite(cropped_path, cropped_image)
-        print(f"번호판 영역 저장: {cropped_path}")
-        capture_count += 1
-        current_time = datetime.now() # 현재 시간 저장
-        print(current_time)
+    cap.release()
 
-    # ESC 키로 종료
-    if cv2.waitKey(1) & 0xFF == 27:
-        break
+    if detections_list:
+        best_detection = max(detections_list, key=lambda x: x['confidence'])
+        best_cropped_image = best_detection['cropped_image']
+        best_confidence = best_detection['confidence']
+
+        # 저장
+        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        cropped_path = os.path.join(cropoutput_dir, f"best_cropped_{current_time}.jpg")
+        cv2.imwrite(cropped_path, best_cropped_image)
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        print(f"가장 신뢰도 높은 번호판 저장: {cropped_path} (신뢰도: {best_confidence:.2f})")
+    else:
+        print("탐지된 번호판이 없습니다.")
 
 cap.release()
-cv2.destroyAllWindows()
+
